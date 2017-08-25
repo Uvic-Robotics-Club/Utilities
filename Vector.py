@@ -41,12 +41,12 @@ class Vector():
             
         Examples:
         
-        >>> 3DVector.Vector()      #creates a vector going from (0,0,0) -> (0,0,0)
-        >>> 3DVector.Vector(1)     #creates a vector going from (0,0,0) -> (1,0,0)
-        >>> 3DVector.Vector(1,2)   #creates a vector going from (0,0,0) -> (1,2,0)
-        >>> 3DVector.Vector(1,2,3) #creates a vector going from (0,0,0) -> (1,2,3)
-        >>> 3DVector.Vector(1,2,3,5,4,3) #creates a vector going from (5,4,3) -> (1,2,3)
-        >>> 3DVector.Vector(1,1,1,cylindrical=True) #creates a vector going from (0,0,0) -> (0.540302305868, 0.841470984808, 1)
+        >>> Vector.Vector()      #creates a vector going from (0,0,0) -> (0,0,0)
+        >>> Vector.Vector(1)     #creates a vector going from (0,0,0) -> (1,0,0)
+        >>> Vector.Vector(1,2)   #creates a vector going from (0,0,0) -> (1,2,0)
+        >>> Vector.Vector(1,2,3) #creates a vector going from (0,0,0) -> (1,2,3)
+        >>> Vector.Vector(1,2,3,5,4,3) #creates a vector going from (5,4,3) -> (1,2,3)
+        >>> Vector.Vector(1,1,1,cylindrical=True) #creates a vector going from (0,0,0) -> (0.540302305868, 0.841470984808, 1)
     """
     
     def __init__(self,*args, **kwargs):
