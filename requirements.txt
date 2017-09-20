@@ -1,2 +1,6 @@
 numpy
 scipy
+<<<<<<< refs/remotes/origin/master
+=======
+pylint
+>>>>>>> Attempt at continous integration

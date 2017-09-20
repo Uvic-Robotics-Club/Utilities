@@ -3,3 +3,9 @@ python:
   - "2.7"
 install:
   - pip install -r requirements.txt
+<<<<<<< refs/remotes/origin/master
+=======
+
+script:
+  - pylint "../Robotic Arm Class/Arm.py"
+>>>>>>> Attempt at continous integration
