@@ -6,6 +6,7 @@ Created on Tue Sep 19 19:52:49 2017
 """
 import math
 import numbers
+import numpy as np
 
 class Point(object):
     '''
@@ -33,7 +34,7 @@ class Point(object):
             self.x = float(x_car)
             self.y = float(y_car)
             self.z = float(z_car)
-        elif isinstance(x_car, list):
+        else:
             if len(x_car) != 3:
                 raise IndexError("Wrong length of array. Need [x,y,z] coordinates for a Point")
             self.x = float(x_car[0])
@@ -227,25 +228,6 @@ class Point(object):
         '''
 
         return [self.x, self.y, self.z]
-    
-    def dot(self, point):
-        """
-        Return the dot product of two point.
-
-        a.dot(b) = a1*b1+a2*b2+a3*b3
-
-        Parameters
-        ----------
-            point : Point
-                A vector to dot with the current object
-
-        Returns:
-            a number representing the dot product of vector passed in and the
-            current vector.
-
-
-        """
-        return self.x*point.x+self.y*point.y+self.z*point.z
 
 class Vector(object):
     """
@@ -384,6 +366,7 @@ class Vector(object):
 
     def __mul__(self, another_vector):
         """ Return a Vector instance as the cross product of two vectors """
+        print "multiplying to vectors"
         return self.cross(another_vector)
     
     def __div__(self, a_scalar):
@@ -530,10 +513,14 @@ class Vector(object):
 
 
         """
-        adjusted_point = self.end - self.origin
-        adjusted_vector = vector.end - vector.origin
-        multiplied_point = adjusted_point*adjusted_vector
-        return sum(multiplied_point.as_array())
+        if isinstance(vector, Point):
+            raise TypeError("Cannot dot a point. Please try a Vector.")
+        adjusted_point = Vector(self.end - self.origin)
+        adjusted_vector = Vector(vector.end - vector.origin)
+        answer = adjusted_point.end.x*adjusted_vector.end.x + adjusted_point.end.y*adjusted_vector.end.y + adjusted_point.end.z*adjusted_vector.end.z
+        
+        return answer
+
 
     def cross(self, vector):
         """
@@ -561,7 +548,10 @@ class Vector(object):
         """
         top_fraction = self.dot(vector)
         bot_fraction = Vector.magnitude(self)*Vector.magnitude(vector)
-        return math.acos(top_fraction/bot_fraction)
+        #if str(np.arccos(top_fraction/bot_fraction)) == 'nan':
+        #    print "Same: {} {}".format(abs(top_fraction-bot_fraction)<math.pow(10,-8), vector)
+        #    raise ValueError("GOT NAN from arc cos")
+        return np.arccos(top_fraction/bot_fraction)
 
     def parallel(self, vector):
         """ Return True if vectors are parallel to each other. """
@@ -676,3 +666,47 @@ class Vector(object):
         length = Vector.magnitude(vector)
         delta_end = vector.end-vector.origin
         return Vector(delta_end.x/length, delta_end.y/length, delta_end.z/length)
+    
+    @staticmethod
+    def project_along_vector(point1, point2, length):
+        '''
+        Solve for the point px,py,pz that is on a vector with magnitude L away
+        in the direction between point 2 and point 1, starting at point 1
+
+        Parameters
+        ----------
+            point1,point2 : araylike or Point
+                a array that contain the [x,y,z] coordinates
+            length : scalar
+                Magnitude of vector?
+
+        Returns
+        -------
+            out : arraylike or Point
+                projected point on the vector. If the input points were Point objects, then the
+                output will be a point
+
+        More Information
+        ----------------
+            Information about what and where this information was pulled from can be found at
+            https://math.oregonstate.edu/home/programs/undergrad/CalculusQuestStudyGuides/vcalc/dotprod/dotprod.html
+            and
+            https://en.wikipedia.org/wiki/Vector_projection
+        '''
+        if isinstance(point1, Point) and isinstance(point2, Point):
+            vector = Vector(point2 - point1)
+            unit_vector = Vector.normalize(vector)
+            projected_point = point1 + unit_vector.end*length
+            return projected_point
+            
+        else:
+            # vector from point 1 to point 2
+            vector = np.subtract(point2, point1)
+    
+            unit_vector = Vector.normalize(vector)
+    
+            # Need to always project along radius
+            # Project backwards
+            projected_point = point1+np.multiply(unit_vector, length)
+    
+            return np.array(projected_point)
