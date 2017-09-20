@@ -1,3 +1,6 @@
+# Status of this folder
+[![Build Status](https://travis-ci.org/Uvic-Robotics-Club/Utilities.svg?branch=master)](https://travis-ci.org/Uvic-Robotics-Club/Utilities)
+
 # This folder deals with the robotic arm
 
 Contents:
