@@ -1,5 +1,5 @@
 # Welcome to the UVIC ROBOTICS Utility page
-
+[![Build Status](https://travis-ci.org/Uvic-Robotics-Club/Utilities.svg?branch=master)](https://travis-ci.org/Uvic-Robotics-Club/Utilities)
 
 ## What this repository is supposed to be
 
