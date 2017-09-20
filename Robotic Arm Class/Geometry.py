@@ -13,8 +13,12 @@ class Point(object):
 
     Parameters
     ----------
-        x,y,z : scalars
-            these are the x,y,z coordinates that the point will represent
+        x : scalar or arraylike
+            this is either the x coordinate that the point will represent or a list that conatins
+            the [x,y,z] coordindates
+        
+        y,z : scalars (optional)
+            these are the y,z coordinates that the point will represent
 
     Returns
     -------
@@ -24,10 +28,17 @@ class Point(object):
     y = 0
     z = 0
 
-    def __init__(self, x_car, y_car, z_car):
-        self.x = float(x_car)
-        self.y = float(y_car)
-        self.z = float(z_car)
+    def __init__(self, x_car, y_car=0.0, z_car=0.0):
+        if isinstance(x_car, numbers.Number):
+            self.x = float(x_car)
+            self.y = float(y_car)
+            self.z = float(z_car)
+        elif isinstance(x_car, list):
+            if len(x_car) != 3:
+                raise IndexError("Wrong length of array. Need [x,y,z] coordinates for a Point")
+            self.x = float(x_car[0])
+            self.y = float(x_car[1])
+            self.z = float(x_car[2])
 
     def __repr__(self):
         '''
@@ -60,7 +71,7 @@ class Point(object):
         -------
             String containing the x,y,z coordinates seperated by commas
         '''
-        return "{},{},{}".format(self.x, self.y, self.z)
+        return "{:.3f},{:.3f},{:.3f}".format(self.x, self.y, self.z)
 
     def __add__(self, other_point):
         '''
@@ -153,19 +164,53 @@ class Point(object):
 
         Parameters
         ----------
-            another_point : Point
-                point to multiply the current one with
+            another_point : scalar or Point
+                If a scalar is given the point will be scaled in the x,y,z axis by that amount.
+                If a point is given it preforms element wise multiplication
 
         Returns
         -------
             out : Point
-                A Point representing each element multiplied by its corosponding element.
+                A Point representing each element multiplied
 
         '''
-        return Point(
-            self.x*another_point.x,
-            self.y*another_point.y,
-            self.z*another_point.z)
+        if isinstance(another_point, numbers.Number):
+            return Point(
+                self.x*another_point,
+                self.y*another_point,
+                self.z*another_point)
+        else:
+            return Point(
+                self.x*another_point.x,
+                self.y*another_point.y,
+                self.z*another_point.z)
+                
+    def __div__(self, another_point):
+        '''
+        Element wise division
+
+        Parameters
+        ----------
+            another_point : scalar or Point
+                If a scalar is given the point will be scaled in the x,y,z axis by that amount.
+                If a point is given it preforms element wise division
+
+        Returns
+        -------
+            out : Point
+                A Point representing each element divided
+
+        '''
+        if isinstance(another_point, numbers.Number):
+            return Point(
+                self.x/another_point,
+                self.y/another_point,
+                self.z/another_point)
+        else:
+            return Point(
+                self.x/another_point.x,
+                self.y/another_point.y,
+                self.z/another_point.z)
 
     def as_array(self):
         '''
@@ -182,8 +227,27 @@ class Point(object):
         '''
 
         return [self.x, self.y, self.z]
+    
+    def dot(self, point):
+        """
+        Return the dot product of two point.
 
-class Vector(Point):
+        a.dot(b) = a1*b1+a2*b2+a3*b3
+
+        Parameters
+        ----------
+            point : Point
+                A vector to dot with the current object
+
+        Returns:
+            a number representing the dot product of vector passed in and the
+            current vector.
+
+
+        """
+        return self.x*point.x+self.y*point.y+self.z*point.z
+
+class Vector(object):
     """
         Vector class:
             Representing a vector in 3D space.
@@ -321,6 +385,18 @@ class Vector(Point):
     def __mul__(self, another_vector):
         """ Return a Vector instance as the cross product of two vectors """
         return self.cross(another_vector)
+    
+    def __div__(self, a_scalar):
+        '''
+        Returns the element wise division of the vector
+        '''
+        if isinstance(a_scalar, numbers.Number):
+            if a_scalar != 0:
+                return Vector(self.end*1.0/a_scalar,self.origin*1.0/a_scalar)
+            else:
+                raise ValueError("Tried to divid a vector by zero")
+        else:
+            raise TypeError("Vector division is only supported with scalar numbers")
 
     def __str__(self):
         """
@@ -414,6 +490,9 @@ class Vector(Point):
         if isinstance(vector, Vector):
             for temp_end, temp_origin in zip(vector.end.as_array(), vector.origin.as_array()):
                 out += math.pow(temp_end-temp_origin, 2)
+        elif isinstance(vector, Point):
+            for counter in vector.as_array():
+                out += math.pow(counter, 2)
         else:
             for counter in vector:
                 out += counter*counter
@@ -577,3 +656,23 @@ class Vector(Point):
             y_points.append(y_points[-1]+temp_vector[1])
             z_points.append(z_points[-1]+temp_vector[2])
         return [x_points, y_points, z_points]
+    
+    @staticmethod
+    def normalize(vector):
+        '''
+        creates the vector that is pointint in the same direction as the input vector but with a
+        length of 1.
+
+        Parameters
+        ----------
+            vector : Vector
+                input vector that will become a unit vector.
+
+        Returns
+        -------
+            out : Vector
+                unit vector pointing in the same direction as the input vector but from the origin
+        '''
+        length = Vector.magnitude(vector)
+        delta_end = vector.end-vector.origin
+        return Vector(delta_end.x/length, delta_end.y/length, delta_end.z/length)

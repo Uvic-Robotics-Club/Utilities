@@ -7,6 +7,8 @@ Created on Tue Aug 01 14:56:44 2017
 """
 
 import numpy as np
+from Geometry import Point, Vector
+import copy
 
 class DisplayArm(object):
     """
@@ -74,8 +76,10 @@ class DisplayArm(object):
         self.first_link_length = lengths[1]*units        # first link
         self.second_link_length = lengths[2]*units        # second link
         self.third_link_length = lengths[3]*units        # third link
-        self.total_arm_length = sum(self.offset_length, self.first_link_length,
-                                    self.second_link_length, self.third_link_length)
+        self.total_arm_length = sum([self.offset_length, 
+                                    self.first_link_length,
+                                    self.second_link_length, 
+                                    self.third_link_length])
 
         self.x_joints = []
         self.y_joints = []
@@ -96,31 +100,6 @@ class DisplayArm(object):
             self.y_joints[3],
             self.z_joints[3])
 
-    @staticmethod
-    def magnitude(vector):
-        '''
-        This computes the magnitude to the input vector. A magnitude is all elements squared,
-        summed, and then square rooted.
-
-        Parameters
-        ----------
-            vector : arraylike
-                Array that will have the magnitude computed. It must be a 1D array of size n
-
-        Returns
-        -------
-            out : scalar
-                the vector length
-
-        More Information
-        ----------------
-            For more information on how this could be used in a more general sense please see the
-            link. https://en.wikipedia.org/wiki/Euclidean_vector
-        '''
-        out = 0
-        for counter in vector:
-            out += counter*counter
-        return np.sqrt(out)
 
     def angles(self):
         """
@@ -151,7 +130,7 @@ class DisplayArm(object):
         '''
         Parameters
         ----------
-        vector1,vector2 : array_like
+        vector1,vector2 : arraylike or Points
             1x3 arrays that you want to find the angle betwen
 
         Returns
@@ -159,10 +138,11 @@ class DisplayArm(object):
         theta : scalar
             the angle from the dot product of a and b
         '''
-        a_mag = DisplayArm.magnitude(vector1)
-        b_mag = DisplayArm.magnitude(vector2)
-
-        theta = np.arccos(np.power(a_mag*b_mag, -1)*np.dot(vector1, vector2))
+        a_mag = Vector.magnitude(vector1)
+        b_mag = Vector.magnitude(vector2)
+        if isinstance(vector1, Point) and isinstance(vector2, Point):
+            theta = np.arccos((vector1.x*vector2.x+vector1.y*vector2.y+vector1.z*vector2.z)/(a_mag*b_mag))
+        #print "1/({}*{}) = {}".format(a_mag,b_mag,1.0/(a_mag*b_mag))
 
         return theta
 
@@ -204,23 +184,7 @@ class DisplayArm(object):
                          [0, 0, 0, 1.0]])
 
 
-    @staticmethod
-    def normalize(vector):
-        '''
-        creates the vector that is pointint in the same direction as the input vector but with a
-        length of 1.
-
-        Parameters
-        ----------
-            vector : arraylike
-                input vector that will become a unit vector
-
-        Returns
-        -------
-            out : arraylike
-                unit vector pointing in the same direction as the input vector
-        '''
-        return np.divide(vector, DisplayArm.magnitude(vector))
+    
 
 
     @staticmethod
@@ -231,15 +195,16 @@ class DisplayArm(object):
 
         Parameters
         ----------
-            point1,point2 : araylike
+            point1,point2 : araylike or Point
                 a array that contain the [x,y,z] coordinates
             length : scalar
                 Magnitude of vector?
 
         Returns
         -------
-            out : array_like
-                projected point on the vector
+            out : array_like or Vector
+                projected point on the vector. If the input points were Point objects, then the
+                output will be a point
 
         More Information
         ----------------
@@ -248,21 +213,27 @@ class DisplayArm(object):
             and
             https://en.wikipedia.org/wiki/Vector_projection
         '''
+        if isinstance(point1, Point) and isinstance(point2, Point):
+            vector = Vector(point2,point1)
+            unit_vector = Vector.normalize(vector)
+            projected_point = point1 + unit_vector.end*float(length)
+            return projected_point
+            
+        else:
+            # vector from point 1 to point 2
+            vector = np.subtract(point2, point1)
+    
+            unit_vector = DisplayArm.normalize(vector)
+    
+            # Need to always project along radius
+            # Project backwards
+            projected_point = point1+np.multiply(unit_vector, length)
+    
+            return np.array(projected_point)
 
-        # vector from point 1 to point 2
-        vector = np.subtract(point2, point1)
-
-        unit_vector = DisplayArm.normalize(vector)
-
-        # Need to always project along radius
-        # Project backwards
-        projected_point = point1+np.multiply(unit_vector, length)
-
-        return np.array(projected_point)
 
 
-
-    def inverse_kinematics(self, goal_location, tol_limit=0.05, max_iterations=100):
+    def inverse_kinematics(self, goal, tol_limit=0.05, max_iterations=100):
         '''
         Preforms Inverse Kinematics on the arm using the known lengths and last positions.
         This uses the FABRIK method.
@@ -271,7 +242,7 @@ class DisplayArm(object):
 
         Parameters
         ----------
-        goal_location : arraylike
+        goal : arraylike or Point
             desired location in the format of [x,y,z]
         tol_limit : scalar (optional)
             tolerance between the desired location and actual one after iteration
@@ -305,18 +276,21 @@ class DisplayArm(object):
             https://www.youtube.com/watch?v=UNoX65PRehA&t=817s
 
         '''
-        # pylint: disable=too-many-instance-attributes
-        
+        if isinstance(goal, list):
+            if len(goal) != 3:
+                raise IndexError("goal unclear. Need x,y,z coordinates in Point or list form.")
+            goal = Point(goal[0], goal[1], goal[2])
+    
         # Find base rotation
         # Initial angle of where end effector is
-        q1_old = np.arctan2(self.y_joints[-1], self.x_joints[-1])
+        initial_base_roation = np.arctan2(self.y_joints[-1], self.x_joints[-1])
 
         # Desired angle
         # arctan2(y,x)
-        self.q1 = np.arctan2(goal_location[1], goal_location[0])
+        self.q1 = np.arctan2(goal.y, goal.x)
 
         # Base rotation
-        base_rotation = self.q1-q1_old
+        base_rotation = self.q1-initial_base_roation
 
         # Base rotation matrix about z
         z_rot = np.array([[np.cos(base_rotation), -np.sin(base_rotation), 0.0],
@@ -328,49 +302,50 @@ class DisplayArm(object):
         # in two dimensions, else each joint will move as if it has
         # a 3 DOF range of motion
 
-        point4 = np.dot(z_rot, [self.x_joints[3], self.y_joints[3], self.z_joints[3]])
-        point3 = np.dot(z_rot, [self.x_joints[2], self.y_joints[2], self.z_joints[2]])
-        point2 = np.dot(z_rot, [self.x_joints[1], self.y_joints[1], self.z_joints[1]])
-        point1 = np.dot(z_rot, [self.x_joints[0], self.y_joints[0], self.z_joints[0]])
+        point4 = Point(np.dot(z_rot, [self.x_joints[3], self.y_joints[3], self.z_joints[3]]))
+        point3 = Point(np.dot(z_rot, [self.x_joints[2], self.y_joints[2], self.z_joints[2]]))
+        point2 = Point(np.dot(z_rot, [self.x_joints[1], self.y_joints[1], self.z_joints[1]]))
+        point1 = Point(np.dot(z_rot, [self.x_joints[0], self.y_joints[0], self.z_joints[0]]))
 
 
         # store starting point of the first joint
-        starting_point1 = np.array(point1, copy=True)
+        starting_point1 = point1
 
         iterations = 0
 
         # Make sure the desired x,y,z point is reachable
-        if DisplayArm.magnitude(goal_location) > self.total_arm_length:
+        if Vector.magnitude(goal) > self.total_arm_length:
             print ' desired point is likely out of reach'
 
         for _ in range(1, max_iterations+1):
 
             # backwards
-            point3 = self.project_along_vector(goal_location, point3, self.third_link_length)
+            point3 = self.project_along_vector(goal, point3, self.third_link_length)
             point2 = self.project_along_vector(point3, point2, self.second_link_length)
             point1 = self.project_along_vector(point2, point1, self.first_link_length)
 
             # forwards
-            point2 = self.project_along_vector(starting_point1, point2, self.first_link_length)
+            point2 = self.project_along_vector(point1, point2, self.first_link_length)
             point3 = self.project_along_vector(point2, point3, self.second_link_length)
-            point4 = self.project_along_vector(point3, goal_location, self.third_link_length)
+            point4 = self.project_along_vector(point3, goal, self.third_link_length)
 
             # Solve for tolerance between iterated point and desired x,y,z,
-            tol = np.subtract(point4, goal_location)
+            tol = point4 - goal
 
             # Make tolerance relative to x,y,z
-            tol = DisplayArm.magnitude(tol)
+            tol = Vector.magnitude(tol)
 
             iterations = iterations+1
 
             # Check if tolerance is within the specefied limit
             if tol < tol_limit:
+                print "goal: {}".format(goal)
+                print "link: {},{},{}".format(Vector.magnitude(point4-point3),Vector.magnitude(point3-point2),Vector.magnitude(point2-point1))
                 break
 
 
         # Re-organize points into a big matrix for plotting elsewhere
-        #self.p_joints = np.transpose(np.array([point1,point2,point3,point4]))
-        self.p_joints = np.transpose(np.array([starting_point1, point2, point3, point4]))
+        self.p_joints = np.transpose(np.array([starting_point1.as_array(), point2.as_array(), point3.as_array(), point4.as_array()]))
 
         self.x_joints = self.p_joints[0]
         self.y_joints = self.p_joints[1]
@@ -378,12 +353,13 @@ class DisplayArm(object):
 
 
         # Return the joint angles by finding the angles with the dot produt
-        vector21 = np.subtract(point2, point1)
-        vector32 = np.subtract(point3, point2)
-        vector43 = np.subtract(point4, point3)
+        vector21 = point2 - point1
+        vector32 = point3 - point2
+        vector43 = point4 - point3
 
         # returns -pi to pi
-        self.q2 = np.arctan2(vector21[2], DisplayArm.magnitude([vector21[0], vector21[1]]))
+        #self.q2 = np.arctan2(vector21.z, Vector.magnitude([vector21.x, vector21.y]))
+        self.q2 = np.arctan2(point2.z-point1.z, np.sqrt(np.power(point2.x-point1.x,2)+np.power(point2.y-point1.y,2)))
 
         # Negative sign because of dh notation, a rotation away from the previous link
         # and towards the x-y plane is a negative moment about the relative z axis.
@@ -444,6 +420,7 @@ class DisplayArm(object):
         q2 = self.q2
         q3 = self.q3
         q4 = self.q4
+        
         offset_length = self.offset_length
         first_link_length = self.first_link_length
         second_link_length = self.second_link_length
@@ -497,9 +474,7 @@ class DisplayArm(object):
         t30 = np.dot(t20, t32)
         t40 = np.dot(t30, t43)    # Transformation matrix from end effector to the global frame
 
-        self.p_joints = [t10[0:3, 3], t20[0:3, 3], t30[0:3, 3], t40[0:3, 3]]
-
-        self.p_joints = np.transpose(self.p_joints)
+        self.p_joints = np.transpose([t10[0:3, 3], t20[0:3, 3], t30[0:3, 3], t40[0:3, 3]])
 
         self.x_joints = self.p_joints[0]
         self.y_joints = self.p_joints[1]
