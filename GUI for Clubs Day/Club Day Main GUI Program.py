@@ -6,8 +6,7 @@ Created on Tue Sep 12 12:02:35 2017
 """
 from PyQt4 import QtCore, QtGui, uic  # Import the PyQt4 module we'll need
 import sys  # We need sys so that we can pass argv to QApplication
-sys.path.append("..\Robotic Arm Class")
-from Arm import displayArm
+from Arm import DisplayArm
 
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -34,14 +33,14 @@ class MainScreen(QtGui.QMainWindow):
         self.horizontalSlider_3.valueChanged.connect(self.SliderChanged)
         self.horizontalSlider_4.valueChanged.connect(self.SliderChanged)
         
-        self.arm= displayArm([0.01,5,4,1.5],
+        self.arm= DisplayArm([0.01,5,4,1.5],
                      units=0.0254, #this is inch to meter conversion
                      q1=45.0/360*2*np.pi,
                      q2=60.0/360*2*np.pi,
                      q3=-30.0/360*2*np.pi,
                      q4=-30.0/360*2*np.pi)
         
-        [x,y,z] = self.arm.FK()
+        [x,y,z] = self.arm.forward_kinematics()
         self.mplwidget.axes.plot(x,y,z)
         self.mplwidget.axes.scatter(x[0],y[0],z[0],color='g',label='p1')
         self.mplwidget.axes.scatter(x[1],y[1],z[1],color='r',label='p2')
@@ -114,7 +113,7 @@ class MainScreen(QtGui.QMainWindow):
         '''
         
         # find the joints for x, y, and z
-        [x_joints,y_joints,z_joints] = self.arm.FK()
+        [x_joints,y_joints,z_joints] = self.arm.forward_kinematics()
         # clear and plot the data
         self.mplwidget.axes.clear()
         self.mplwidget.axes.plot3D(x_joints,y_joints,z_joints            ,color='b',label='links')
