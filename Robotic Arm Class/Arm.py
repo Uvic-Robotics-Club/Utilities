@@ -8,7 +8,6 @@ Created on Tue Aug 01 14:56:44 2017
 
 import numpy as np
 from Geometry import Point, Vector
-import copy
 
 class DisplayArm(object):
     """
@@ -76,10 +75,10 @@ class DisplayArm(object):
         self.first_link_length = lengths[1]*units        # first link
         self.second_link_length = lengths[2]*units        # second link
         self.third_link_length = lengths[3]*units        # third link
-        self.total_arm_length = sum([self.offset_length, 
-                                    self.first_link_length,
-                                    self.second_link_length, 
-                                    self.third_link_length])
+        self.total_arm_length = sum([self.offset_length,
+                                     self.first_link_length,
+                                     self.second_link_length,
+                                     self.third_link_length])
 
         self.x_joints = []
         self.y_joints = []
@@ -125,26 +124,6 @@ class DisplayArm(object):
 
         return [self.q1, self.q2, self.q3, self.q4]
 
-    @staticmethod
-    def angle_from_dot_product(vector1, vector2):
-        '''
-        Parameters
-        ----------
-        vector1,vector2 : arraylike or Points
-            1x3 arrays that you want to find the angle betwen
-
-        Returns
-        -------
-        theta : scalar
-            the angle from the dot product of a and b
-        '''
-        a_mag = Vector.magnitude(vector1)
-        b_mag = Vector.magnitude(vector2)
-        if isinstance(vector1, Point) and isinstance(vector2, Point):
-            theta = np.arccos((vector1.x*vector2.x+vector1.y*vector2.y+vector1.z*vector2.z)/(a_mag*b_mag))
-        #print "1/({}*{}) = {}".format(a_mag,b_mag,1.0/(a_mag*b_mag))
-
-        return theta
 
     @staticmethod
     def xz_rotation(z_rot, z_tran, x_tran, x_rot):
@@ -182,54 +161,6 @@ class DisplayArm(object):
                          [np.sin(z_rot), np.cos(x_rot)*np.cos(z_rot), -np.sin(x_rot)*np.sin(z_rot), x_tran*np.sin(z_rot)],
                          [0, np.sin(x_rot), np.cos(x_rot), z_tran],
                          [0, 0, 0, 1.0]])
-
-
-    
-
-
-    @staticmethod
-    def project_along_vector(point1, point2, length):
-        '''
-        Solve for the point px,py,pz that is on a vector with magnitude L away
-        in the direction between point 2 and point 1, starting at point 1
-
-        Parameters
-        ----------
-            point1,point2 : araylike or Point
-                a array that contain the [x,y,z] coordinates
-            length : scalar
-                Magnitude of vector?
-
-        Returns
-        -------
-            out : array_like or Vector
-                projected point on the vector. If the input points were Point objects, then the
-                output will be a point
-
-        More Information
-        ----------------
-            Information about what and where this information was pulled from can be found at
-            https://math.oregonstate.edu/home/programs/undergrad/CalculusQuestStudyGuides/vcalc/dotprod/dotprod.html
-            and
-            https://en.wikipedia.org/wiki/Vector_projection
-        '''
-        if isinstance(point1, Point) and isinstance(point2, Point):
-            vector = Vector(point2,point1)
-            unit_vector = Vector.normalize(vector)
-            projected_point = point1 + unit_vector.end*float(length)
-            return projected_point
-            
-        else:
-            # vector from point 1 to point 2
-            vector = np.subtract(point2, point1)
-    
-            unit_vector = DisplayArm.normalize(vector)
-    
-            # Need to always project along radius
-            # Project backwards
-            projected_point = point1+np.multiply(unit_vector, length)
-    
-            return np.array(projected_point)
 
 
 
@@ -280,7 +211,7 @@ class DisplayArm(object):
             if len(goal) != 3:
                 raise IndexError("goal unclear. Need x,y,z coordinates in Point or list form.")
             goal = Point(goal[0], goal[1], goal[2])
-    
+
         # Find base rotation
         # Initial angle of where end effector is
         initial_base_roation = np.arctan2(self.y_joints[-1], self.x_joints[-1])
@@ -307,7 +238,6 @@ class DisplayArm(object):
         point2 = Point(np.dot(z_rot, [self.x_joints[1], self.y_joints[1], self.z_joints[1]]))
         point1 = Point(np.dot(z_rot, [self.x_joints[0], self.y_joints[0], self.z_joints[0]]))
 
-
         # store starting point of the first joint
         starting_point1 = point1
 
@@ -320,14 +250,14 @@ class DisplayArm(object):
         for _ in range(1, max_iterations+1):
 
             # backwards
-            point3 = self.project_along_vector(goal, point3, self.third_link_length)
-            point2 = self.project_along_vector(point3, point2, self.second_link_length)
-            point1 = self.project_along_vector(point2, point1, self.first_link_length)
+            point3 = Vector.project_along_vector(goal, point3, self.third_link_length)
+            point2 = Vector.project_along_vector(point3, point2, self.second_link_length)
+            point1 = Vector.project_along_vector(point2, point1, self.first_link_length)
 
             # forwards
-            point2 = self.project_along_vector(point1, point2, self.first_link_length)
-            point3 = self.project_along_vector(point2, point3, self.second_link_length)
-            point4 = self.project_along_vector(point3, goal, self.third_link_length)
+            point2 = Vector.project_along_vector(point1, point2, self.first_link_length)
+            point3 = Vector.project_along_vector(point2, point3, self.second_link_length)
+            point4 = Vector.project_along_vector(point3, goal, self.third_link_length)
 
             # Solve for tolerance between iterated point and desired x,y,z,
             tol = point4 - goal
@@ -339,13 +269,10 @@ class DisplayArm(object):
 
             # Check if tolerance is within the specefied limit
             if tol < tol_limit:
-                print "goal: {}".format(goal)
-                print "link: {},{},{}".format(Vector.magnitude(point4-point3),Vector.magnitude(point3-point2),Vector.magnitude(point2-point1))
                 break
 
-
         # Re-organize points into a big matrix for plotting elsewhere
-        self.p_joints = np.transpose(np.array([starting_point1.as_array(), point2.as_array(), point3.as_array(), point4.as_array()]))
+        self.p_joints = np.transpose([starting_point1.as_array(), point2.as_array(), point3.as_array(), point4.as_array()])
 
         self.x_joints = self.p_joints[0]
         self.y_joints = self.p_joints[1]
@@ -353,13 +280,12 @@ class DisplayArm(object):
 
 
         # Return the joint angles by finding the angles with the dot produt
-        vector21 = point2 - point1
-        vector32 = point3 - point2
-        vector43 = point4 - point3
+        vector21 = Vector(point2 - point1)
+        vector32 = Vector(point3 - point2)
+        vector43 = Vector(point4 - point3)
 
         # returns -pi to pi
-        #self.q2 = np.arctan2(vector21.z, Vector.magnitude([vector21.x, vector21.y]))
-        self.q2 = np.arctan2(point2.z-point1.z, np.sqrt(np.power(point2.x-point1.x,2)+np.power(point2.y-point1.y,2)))
+        self.q2 = np.arctan2(vector21.end.z, Vector.magnitude([vector21.end.x, vector21.end.y]))
 
         # Negative sign because of dh notation, a rotation away from the previous link
         # and towards the x-y plane is a negative moment about the relative z axis.
@@ -367,8 +293,8 @@ class DisplayArm(object):
         # in 2D
         # the x axis in dh convention is typically along the link direction.
 
-        self.q3 = -1*self.angle_from_dot_product(vector21, vector32)
-        self.q4 = -1*self.angle_from_dot_product(vector32, vector43)
+        self.q3 = -1.0*vector21.angle(vector32)
+        self.q4 = -1.0*vector32.angle(vector43)
 
         return [self.q1, self.q2, self.q3, self.q4, self.x_joints, self.y_joints, self.z_joints]
 
@@ -420,7 +346,7 @@ class DisplayArm(object):
         q2 = self.q2
         q3 = self.q3
         q4 = self.q4
-        
+
         offset_length = self.offset_length
         first_link_length = self.first_link_length
         second_link_length = self.second_link_length
