@@ -13,7 +13,7 @@ Current projects include:
 - Arm class for inverse kinematics as well as forward kinematics
 
 ## Who do I talk to?
-To get things approved for use on the rover talk to Greg, He is the software lead and must approve any/all files.
+To get things approved for use on the rover talk to Greg, He is the software coordinator and must approve any/all files.
 
 ## Revision control
 To make sure we keep track of everything thats going on the rover we are implementing a basic revision control in 3 groups.
