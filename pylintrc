@@ -94,7 +94,7 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 
 # --disable=W"
-disable=W0312,C0330
+disable=W0312,C0330,C0370
 
 
 [REPORTS]
