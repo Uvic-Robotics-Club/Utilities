@@ -156,9 +156,9 @@ class DisplayArm(object):
 		"""
 		# pylint: disable=line-too-long
 		return np.array([[np.cos(z_rot), -np.cos(x_rot)*np.sin(z_rot), np.sin(x_rot)*np.sin(z_rot), x_tran*np.cos(z_rot)],
-						 [np.sin(z_rot), np.cos(x_rot)*np.cos(z_rot), -np.sin(x_rot)*np.sin(z_rot), x_tran*np.sin(z_rot)],
-						 [0, np.sin(x_rot), np.cos(x_rot), z_tran],
-						 [0, 0, 0, 1.0]])
+					 [np.sin(z_rot), np.cos(x_rot)*np.cos(z_rot), -np.sin(x_rot)*np.sin(z_rot), x_tran*np.sin(z_rot)],
+					 [0, np.sin(x_rot), np.cos(x_rot), z_tran],
+					 [0, 0, 0, 1.0]])
 
 
 

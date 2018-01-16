@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="Images">
+    <file>360_controller.png</file>
+  </qresource>
+  <qresource prefix="newPrefix"/>
+</RCC>
