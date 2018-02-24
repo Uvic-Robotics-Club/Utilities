@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1370</width>
-    <height>1234</height>
+    <width>605</width>
+    <height>773</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -142,14 +142,26 @@
          </property>
         </widget>
        </item>
+       <item row="8" column="1">
+        <widget class="QLabel" name="x_y_z_label">
+         <property name="text">
+          <string>x: y: z:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>End of Link 2</string>
+         </property>
+        </widget>
+       </item>
       </layout>
       <zorder>horizontalSlider_3</zorder>
       <zorder>label_4</zorder>
       <zorder>label_3</zorder>
-      <zorder>horizontalSlider</zorder>
       <zorder>horizontalSlider_2</zorder>
       <zorder>horizontalSlider_4</zorder>
-      <zorder>lcdNumber</zorder>
       <zorder>label</zorder>
       <zorder>lcdNumber_4</zorder>
       <zorder>label_2</zorder>
@@ -157,8 +169,9 @@
       <zorder>lcdNumber_3</zorder>
       <zorder>horizontalSlider</zorder>
       <zorder>lcdNumber</zorder>
-      <zorder></zorder>
       <zorder>label_5</zorder>
+      <zorder>x_y_z_label</zorder>
+      <zorder>label_7</zorder>
      </widget>
     </item>
    </layout>
